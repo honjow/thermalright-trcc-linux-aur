@@ -1,0 +1,95 @@
+name: Sync upstream release to PKGBUILD
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-release:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect latest upstream release
+        id: detect
+        env:
+          UPSTREAM_REPO: Lexonight1/thermalright-trcc-linux
+          PKGBUILD_PATH: thermalright-trcc/PKGBUILD
+        run: |
+          set -euo pipefail
+
+          latest_tag="$(curl -fsSL "https://api.github.com/repos/${UPSTREAM_REPO}/releases/latest" | python -c 'import json,sys; print(json.load(sys.stdin)["tag_name"])')"
+          latest_ver="${latest_tag#v}"
+
+          current_ver="$(python - <<'PY'
+          from pathlib import Path
+          text = Path("thermalright-trcc/PKGBUILD").read_text(encoding="utf-8")
+          for line in text.splitlines():
+              if line.startswith("pkgver="):
+                  print(line.split("=", 1)[1].strip())
+                  break
+          else:
+              raise SystemExit("pkgver not found in PKGBUILD")
+          PY
+          )"
+
+          echo "latest_tag=${latest_tag}" >> "$GITHUB_OUTPUT"
+          echo "latest_ver=${latest_ver}" >> "$GITHUB_OUTPUT"
+          echo "current_ver=${current_ver}" >> "$GITHUB_OUTPUT"
+
+          if [ "${latest_ver}" = "${current_ver}" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update PKGBUILD version and checksum
+        if: steps.detect.outputs.changed == 'true'
+        env:
+          PKGBUILD_PATH: thermalright-trcc/PKGBUILD
+          NEW_VER: ${{ steps.detect.outputs.latest_ver }}
+        run: |
+          set -euo pipefail
+
+          tarball_url="https://github.com/Lexonight1/thermalright-trcc-linux/archive/refs/tags/v${NEW_VER}.tar.gz"
+          new_sha="$(curl -fsSL "${tarball_url}" | sha256sum | awk '{print $1}')"
+
+          export NEW_SHA="${new_sha}"
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path(os.environ["PKGBUILD_PATH"])
+          new_ver = os.environ["NEW_VER"]
+          new_sha = os.environ["NEW_SHA"]
+
+          text = path.read_text(encoding="utf-8")
+          text = re.sub(r"^pkgver=.*$", f"pkgver={new_ver}", text, flags=re.M)
+          text = re.sub(r"^sha256sums=\('.*'\)$", f"sha256sums=('{new_sha}')", text, flags=re.M)
+          path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Commit and push update
+        if: steps.detect.outputs.changed == 'true'
+        env:
+          NEW_VER: ${{ steps.detect.outputs.latest_ver }}
+        run: |
+          set -euo pipefail
+
+          git add thermalright-trcc/PKGBUILD
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "chore: bump thermalright-trcc to ${NEW_VER}"
+          git push
+
+      - name: No update needed
+        if: steps.detect.outputs.changed != 'true'
+        run: echo "No new upstream release. PKGBUILD is already up to date."
