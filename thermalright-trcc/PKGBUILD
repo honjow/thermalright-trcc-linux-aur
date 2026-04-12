@@ -3,7 +3,7 @@
 # Maintainer: TRCC Linux Contributors <noreply@github.com>
 
 pkgname=thermalright-trcc
-pkgver=9.4.6
+pkgver=9.4.7
 pkgrel=1
 pkgdesc="Thermalright LCD/LED Control Center for Linux"
 arch=('any')
@@ -40,7 +40,7 @@ conflicts=('thermalright-trcc-git')
 source=(
   "thermalright-trcc-linux-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz"
 )
-sha256sums=('0dc4f5092c4270e5e18367908f6c115cae2b255a625084e33f4553de58a60374')
+sha256sums=('5267ac74517b324286af1fae4d90766e3f64c6bafd7d315a84b155e4052c01c6')
 
 build() {
   cd "${srcdir}/thermalright-trcc-linux-${pkgver}" || return 1
