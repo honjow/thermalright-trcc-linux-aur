@@ -1,4 +1,5 @@
 """Check installed package payload and runtime without accessing hardware."""
+import grp
 import importlib
 import os
 import pathlib
@@ -33,6 +34,11 @@ for module in ('trcc', 'PySide6', 'numpy', 'psutil', 'usb', 'pyudev', 'click',
                'typer', 'fastapi', 'uvicorn', 'websockets', 'cryptography',
                'python_multipart', 'prompt_toolkit', 'certifi'):
     importlib.import_module(module)
+from trcc.ui.api import build_app
+assert build_app(serve=False).openapi()['paths']
+assert grp.getgrnam('trcc').gr_name == 'trcc'
+subprocess.run(['udevadm', 'verify', '/usr/lib/udev/rules.d/70-trcc-lcd.rules',
+                '/usr/lib/udev/rules.d/70-trcc-rgb.rules'], check=True)
 subprocess.run(['trcc', '--help'], check=True)
 subprocess.run(['trcc', 'api', '--help'], check=True)
 with tempfile.TemporaryDirectory(prefix='trcc-unit-verify-') as runtime:
