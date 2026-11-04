@@ -40,7 +40,7 @@ optdepends=(
   'python-gobject: Wayland session support'
   'python-hidapi: HID panel support (install this or python-hid)'
   'python-hid: HID panel support (install this or python-hidapi)'
-  'python-sounddevice: Audio visualizer support (AUR)'
+  'python-sounddevice: Audio visualizer support (AUR; installs PortAudio)'
   'python-qrcode: Remote pairing QR codes'
   'ffmpeg: Video playback and audio capture'
   'smartmontools: Disk health sensors'

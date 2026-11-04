@@ -4,6 +4,10 @@ on:
   push:
     paths:
         - "thermalright-trcc/PKGBUILD"
+        - "thermalright-trcc/.SRCINFO"
+        - ".github/workflows/aur_trcc.yml"
+        - ".github/workflows/validate-package.yml"
+        - "tests/check-package.py"
   workflow_dispatch:
 
 jobs:
