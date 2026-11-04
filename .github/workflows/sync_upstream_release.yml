@@ -82,8 +82,16 @@ jobs:
 
           text = path.read_text(encoding="utf-8")
           text = re.sub(r"^pkgver=.*$", f"pkgver={new_ver}", text, flags=re.M)
+          text = re.sub(r"^pkgrel=.*$", "pkgrel=1", text, flags=re.M)
           text = re.sub(r"^sha256sums=\('.*'\)$", f"sha256sums=('{new_sha}')", text, flags=re.M)
           path.write_text(text, encoding="utf-8")
+          srcinfo = path.with_name(".SRCINFO")
+          old = srcinfo.read_text(encoding="utf-8")
+          old_ver = re.search(r"^\tpkgver = (.+)$", old, re.M).group(1)
+          old = old.replace(old_ver, new_ver)
+          old = re.sub(r"^\tpkgrel = .*", "\tpkgrel = 1", old, flags=re.M)
+          old = re.sub(r"^\tsha256sums = .*", f"\tsha256sums = {new_sha}", old, flags=re.M)
+          srcinfo.write_text(old, encoding="utf-8")
           PY
 
       - name: Commit and push update
@@ -93,7 +101,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          git add thermalright-trcc/PKGBUILD
+          git add thermalright-trcc/PKGBUILD thermalright-trcc/.SRCINFO
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -m "chore: bump thermalright-trcc to ${NEW_VER}"
           git push

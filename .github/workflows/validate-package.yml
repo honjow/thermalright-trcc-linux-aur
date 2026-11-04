@@ -1,0 +1,38 @@
+name: Validate Arch package
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          pacman -Syu --noconfirm git sudo python
+          useradd -m builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+      - name: Check metadata and build from clean sources
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: |
+          case "$PACKAGE" in thermalright-trcc|thermalright-trcc-git) ;; *) exit 1;; esac
+          cd "$PACKAGE"
+          sudo -u builder bash -c 'makepkg --printsrcinfo > /tmp/SRCINFO && diff -u .SRCINFO /tmp/SRCINFO'
+          sudo -u builder makepkg --syncdeps --cleanbuild --noconfirm
+          pacman -U --noconfirm ./*.pkg.tar.zst
+          python ../tests/check-package.py ./*.pkg.tar.zst
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.package }}-verified
+          path: ${{ inputs.package }}/*.pkg.tar.zst
