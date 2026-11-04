@@ -5,7 +5,7 @@
 pkgname=thermalright-trcc-git
 _pkgname=thermalright-trcc-linux
 pkgver=9.12.0.r2.g8a43859
-pkgrel=1
+pkgrel=2
 pkgdesc="Thermalright LCD/LED Control Center for Linux (git version)"
 arch=('any')
 url="https://github.com/Lexonight1/thermalright-trcc-linux"
