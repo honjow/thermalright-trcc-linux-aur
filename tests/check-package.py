@@ -1,8 +1,10 @@
 """Check installed package payload and runtime without accessing hardware."""
 import importlib
+import os
 import pathlib
 import subprocess
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 
 archive = pathlib.Path(sys.argv[1])
@@ -33,6 +35,8 @@ for module in ('trcc', 'PySide6', 'numpy', 'psutil', 'usb', 'pyudev', 'click',
     importlib.import_module(module)
 subprocess.run(['trcc', '--help'], check=True)
 subprocess.run(['trcc', 'api', '--help'], check=True)
-subprocess.run(['systemd-analyze', '--user', 'verify',
-                '/usr/lib/systemd/user/trccd.service'], check=True)
+with tempfile.TemporaryDirectory(prefix='trcc-unit-verify-') as runtime:
+    subprocess.run(['systemd-analyze', '--user', 'verify',
+                    '/usr/lib/systemd/user/trccd.service'], check=True,
+                   env={**os.environ, 'XDG_RUNTIME_DIR': runtime})
 print('Package payload, policy helpers, runtime imports, CLI/API and user unit verified.')
