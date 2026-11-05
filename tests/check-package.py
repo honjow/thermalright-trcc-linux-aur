@@ -12,7 +12,6 @@ archive = pathlib.Path(sys.argv[1])
 files = set(subprocess.check_output(['bsdtar', '-tf', str(archive)], text=True).splitlines())
 required = [
     'usr/lib/udev/rules.d/70-trcc-lcd.rules',
-    'usr/lib/udev/rules.d/70-trcc-rgb.rules',
     'usr/lib/sysusers.d/trcc.conf',
     'usr/lib/modprobe.d/trcc-lcd.conf',
     'usr/lib/modules-load.d/trcc-sg.conf',
@@ -20,6 +19,15 @@ required = [
     'usr/lib/systemd/user/trccd.service',
     'usr/share/applications/trcc-linux.desktop',
 ]
+pkginfo = subprocess.check_output(['bsdtar', '-xOf', str(archive), '.PKGINFO'], text=True)
+is_git = 'pkgname = thermalright-trcc-git\n' in pkginfo
+rgb_rule = 'usr/lib/udev/rules.d/70-trcc-rgb.rules'
+if is_git:
+    assert rgb_rule not in files
+    assert 'usr/lib/udev/rules.d/70-trcc-module-rgb.rules' not in files
+    required.extend(['usr/bin/trcc-module-devices', 'usr/bin/trcc-module-devices-off'])
+else:
+    required.append(rgb_rule)
 for name in required:
     assert name in files, name
 assert 'usr/lib/udev/rules.d/99-trcc-lcd.rules' not in files
@@ -37,8 +45,10 @@ for module in ('trcc', 'PySide6', 'numpy', 'psutil', 'usb', 'pyudev', 'click',
 from trcc.ui.api import build_app
 assert build_app(serve=False).openapi()['paths']
 assert grp.getgrnam('trcc').gr_name == 'trcc'
-subprocess.run(['udevadm', 'verify', '/usr/lib/udev/rules.d/70-trcc-lcd.rules',
-                '/usr/lib/udev/rules.d/70-trcc-rgb.rules'], check=True)
+udev_rules = ['/usr/lib/udev/rules.d/70-trcc-lcd.rules']
+if not is_git:
+    udev_rules.append('/usr/lib/udev/rules.d/70-trcc-rgb.rules')
+subprocess.run(['udevadm', 'verify', *udev_rules], check=True)
 subprocess.run(['trcc', '--help'], check=True)
 subprocess.run(['trcc', 'api', '--help'], check=True)
 with tempfile.TemporaryDirectory(prefix='trcc-unit-verify-') as runtime:
