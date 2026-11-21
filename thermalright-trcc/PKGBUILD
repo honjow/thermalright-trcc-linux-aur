@@ -5,7 +5,7 @@
 pkgname=thermalright-trcc
 pkgver=9.12.2
 pkgrel=1
-pkgdesc="Thermalright LCD/LED Control Center for Linux"
+pkgdesc="Thermalright LCD/LED Control Center for Linux (unofficial AUR package)"
 arch=('any')
 url="https://github.com/Lexonight1/thermalright-trcc-linux"
 license=('GPL-3.0-or-later')
@@ -69,8 +69,8 @@ package() {
   # udev rules
   install -Dm644 packaging/udev/70-trcc-lcd.rules \
     "${pkgdir}/usr/lib/udev/rules.d/70-trcc-lcd.rules"
-  install -Dm644 packaging/udev/70-trcc-rgb.rules \
-    "${pkgdir}/usr/lib/udev/rules.d/70-trcc-rgb.rules"
+  # RGB access is granted on demand by trcc-module-devices, not by a
+  # core package rule. The module-rgb rule is only for declarative NixOS.
   # Device-access group referenced by the udev rules
   install -Dm644 packaging/sysusers/trcc.conf \
     "${pkgdir}/usr/lib/sysusers.d/trcc.conf"

@@ -1,5 +1,5 @@
 pkgbase = thermalright-trcc
-	pkgdesc = Thermalright LCD/LED Control Center for Linux
+	pkgdesc = Thermalright LCD/LED Control Center for Linux (unofficial AUR package)
 	pkgver = 9.12.2
 	pkgrel = 1
 	url = https://github.com/Lexonight1/thermalright-trcc-linux
